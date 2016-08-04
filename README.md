@@ -1,2 +1,2 @@
-# space-game
-idk man i made a game in space k thx bye
+# Space Game
+Space game I made during camp
