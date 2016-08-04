@@ -22,9 +22,11 @@ int main()
 	window.create(sf::VideoMode::getFullscreenModes()[0], "Spaceship", sf::Style::Fullscreen);
 	// Level
 	int level = 1;
+	// TP Timer (cooldown to prevent double uses)
+	int tpTimer = 0;
 	// UFO Textures
 	sf::Texture ufoTex;
-	ufoTex.loadFromFile("C:\\Users\\student\\Desktop\\Nicholas C\\ufo.png");
+	ufoTex.loadFromFile("ufo.png");
 	vector<sf::Sprite> ufos = {};
 	vector<int> ufoTimers = { 0, 100 };
 	vector<int> ufoRotations = { rand() % 359, rand() % 359 };
@@ -56,7 +58,6 @@ int main()
 	bool spaceshipFlashing = false;
 	// Coins
 	sf::CircleShape coins[10];
-	bool liveCoins[10] = { true, true, true, true, true, true, true, true, true, true };
 	for (int i = 0; i < 10; i++)
 	{
 		coins[i] = sf::CircleShape(25);
@@ -133,13 +134,15 @@ int main()
 		{
 			rect.rotate(0.2);
 		}
-		if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S)) && ultCharge == 30000)
+		if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S)) && ultCharge >= 30000 && tpTimer == 1000)
 		{
 			rect.setPosition(sf::Vector2f(rand() % 3900 + 50, rand() % 3900 + 50));
-			meter.setFillColor(sf::Color::Red);
-			ultCharge = 0;
+			ultCharge -= 30000;
 			spaceshipVulnerable = false;
 			spaceshipVulnerableTimer = 2000;
+			shipVeloX = 0;
+			shipVeloY = 0;
+			tpTimer = 0;
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
 		{
@@ -179,7 +182,7 @@ int main()
 			{
 				coins[i].setPosition(sf::Vector2f(rand() % 3900 + 50, rand() % 3900 + 50));
 				points++;
-				ultCharge += min(3000, 30000 - ultCharge);
+				ultCharge += min(3000, 60000 - ultCharge);
 			}
 		}
 
@@ -187,7 +190,9 @@ int main()
 		score.setPosition(sf::Vector2f(window.getView().getCenter().x - 160, window.getView().getCenter().y + 300));
 		
 		meter.setPosition(sf::Vector2f(window.getView().getCenter().x - 300, window.getView().getCenter().y - 475));
-		meter.setSize(sf::Vector2f(ultCharge / 50, 50));
+		meter.setSize(sf::Vector2f(ultCharge / 100, 50));
+
+		if (tpTimer < 1000) tpTimer++;
 
 		for (int i = 0; i < 3; i++)
 		{
@@ -217,7 +222,7 @@ int main()
 			if (ufos[i].getPosition().x < 0) ufos[i].setPosition(sf::Vector2f(4000, ufos[i].getPosition().y));
 			if (ufos[i].getPosition().y > 4000) ufos[i].setPosition(sf::Vector2f(ufos[i].getPosition().x, 0));
 			if (ufos[i].getPosition().y < 0) ufos[i].setPosition(sf::Vector2f(ufos[i].getPosition().x, 4000));
-			if (collisionUFO(rect, ufos[i]) && spaceshipVulnerable)
+		if (collisionUFO(rect, ufos[i]) && spaceshipVulnerable)
 			{
 				rect.setPosition(sf::Vector2f(2000, 2000));
 				shipVeloX = 0;
@@ -230,10 +235,12 @@ int main()
 		
 		lolNoob.setPosition(sf::Vector2f(window.getView().getCenter().x - 500, window.getView().getCenter().y - 200));
 
-		if (ultCharge < 30000) ultCharge++;
-		else if (ultCharge == 30000) meter.setFillColor(sf::Color::Green);
+		if (ultCharge < 60000) ultCharge++;
+		if (ultCharge < 30000) meter.setFillColor(sf::Color::Red);
+		else if (ultCharge >= 30000 && ultCharge < 60000) meter.setFillColor(sf::Color::Blue);
+		else if (ultCharge == 60000) meter.setFillColor(sf::Color::Green);
 		
-		if (points == level)
+		if (points >= level)
 		{
 			level++;
 			points = 0;
@@ -256,7 +263,7 @@ int main()
 		{
 			window.draw(ufos[i]);
 		}
-		for (int i = 0; i < 10; i++) if (liveCoins[i]) window.draw(coins[i]);
+		for (int i = 0; i < 10; i++) window.draw(coins[i]);
 		window.draw(score);
 		window.draw(meter);
 		for (int i = 2; i >= (3 - lives); i--) window.draw(hearts[i]);
